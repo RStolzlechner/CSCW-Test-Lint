@@ -1,0 +1,69 @@
+# 
+# author Marc Burchart <marc.burchart@fernuni-hagen.de>
+# version 1.0-20200928
+# description xx
+# 
+
+version: "3.8"
+services:
+    postgres:
+        image: "postgres:13-alpine" 
+        container_name: postgres
+        environment: 
+            - "POSTGRES_USER=${POSTGRESQL_USERNAME}"
+            - "POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}"
+            - "POSTGRES_DB=${POSTGRESQL_MOODLEDB}"
+        expose: 
+            - "5432"
+        networks:
+            - db
+    pgadmin:
+        image: "dpage/pgadmin4:4.27"
+        container_name: pgadmin     
+        environment:
+            - "PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}"
+            - "PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}"
+        ports:
+            - "8080:80"
+        volumes:
+            - "./servers.json:/pgadmin4/servers.json"
+        networks:
+            - ext
+            - db
+        depends_on:
+            - "postgres"
+    moodle:
+        build: "./moodle"    
+        container_name: moodle
+        environment:
+            - "MOODLE_FULLNAME=${MOODLE_FULLNAME}"
+            - "MOODLE_SHORTNAME=${MOODLE_SHORTNAME}"
+            - "MOODLE_LANG=${MOODLE_LANG}"
+            - "MOODLE_ADDRESS=${MOODLE_ADDRESS}"
+            - "MOODLE_ADMINUSERNAME=${MOODLE_ADMINUSERNAME}"
+            - "MOODLE_ADMINPASSWORD=${MOODLE_ADMINPASSWORD}"
+            - "MOODLE_ADMINEMAIL=${MOODLE_ADMINEMAIL}"            
+            - "POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}"
+            - "POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}"
+            - "POSTGRESQL_MOODLEDB=${POSTGRESQL_MOODLEDB}"
+            - "GIT_EMAIL=${GIT_EMAIL}"
+            - "GIT_NAME=${GIT_NAME}"
+            - "GIT_PWD_SSH=${GIT_PWD_SSH}"
+            - "GIT_PWD_GPG=${GIT_PWD_GPG}"
+        volumes:
+            - "./keys:/home/keys"
+            - "./plugin:/var/www/mod/template"
+        ports:
+            - "8081:80"
+            - "8082:443"
+        networks:
+            - ext
+            - db   
+        depends_on:
+            - "postgres"
+networks:
+  ext:
+    driver: bridge
+  db:
+    driver: bridge
+    internal: true
